@@ -1,0 +1,81 @@
+﻿@using HospitalTierraMedia.Models;
+@model PacientesViewModel
+
+@{
+    ViewData["Title"] = "Listado de Pacientes";
+}
+
+<div class="row text">
+    <div class="col-md-12">
+        <h2>Listado de Pacientes</h2>
+        <form method="get" action="@Url.Action("Index", "Paciente", new { area = "", searchDni = "" })">
+            <div class="input-group mb-3">
+                <input type="text" name="searchDni" class="form-control" placeholder="Buscar por DNI" aria-label="Buscar por DNI" aria-describedby="button-addon2">
+                <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Buscar</button>
+            </div>
+        </form>
+        <p>
+            <a href="@Url.Action("Create", "Paciente")" class="btn btn-primary">Agregar Paciente</a>
+        </p>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Dirección</th>
+                    <th>DNI</th>
+                    <th>Activo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var paciente in Model.Pacientes)
+                {
+                    <tr>
+                        <td>@paciente.Nombre</td>
+                        <td>@paciente.Apellido</td>
+                        <td>@paciente.Direccion</td>
+                        <td>@paciente.DNI</td>
+                        <td>@paciente.Activo</td>
+                        <td>
+                            <a href="@Url.Action("Edit", "Paciente", new { id = paciente.Id })" class="btn btn-warning">Editar</a>
+                            <a href="#" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" data-id="@paciente.Id">Eliminar</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+<!-- Modal de confirmación -->
+<!-- Modal de confirmación -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ¿Está seguro de que desea eliminar este paciente?
+            </div>
+            <div class="modal-footer">
+                <form id="deleteForm" method="post" action="@Url.Action("Delete", "Paciente")">
+                    <input type="hidden" id="patientId" name="id" />
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        $('#confirmDeleteModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var patientId = button.data('id');
+            var modal = $(this);
+            modal.find('#patientId').val(patientId);
+        });
+    </script>
+}
