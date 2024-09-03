@@ -31,4 +31,4 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - /home/fede/mongo_data:/data/db  # Ruta de WSL
+      - /home/hospital/mongo_data:/data/db

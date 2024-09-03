@@ -2,7 +2,6 @@
 using HospitalTierraMedia.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
-using System.IdentityModel.Tokens.Jwt;
 using System.Reflection.Metadata.Ecma335;
 using System.Text.Json;
 
@@ -28,24 +27,13 @@ namespace HospitalTierraMedia.Web.Controllers
                     if (doc.RootElement.TryGetProperty("token", out JsonElement tokenElement))
                     {
                         token = tokenElement.GetString();
-                        var expirationClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Exp);
-                        if (expirationClaim != null)
-                        {
-                            var expirationTime = DateTimeOffset.FromUnixTimeSeconds(long.Parse(expirationClaim.Value));
-                            if (expirationTime < DateTimeOffset.UtcNow)
-                            {
-                                TempData["ErrorMessage"] = "Error: Ha caducado la sesión.";
-                                Response.Cookies.Delete("authToken");
-                                return "Ha caducado la sesión.";
-                            }
-                        }
                         return token;
                     }
                     else
                     {
                         TempData["ErrorMessage"] = "Error: Ha caducado la sesión.";
                         Response.Cookies.Delete("authToken");
-                        return "Ha caducado la sesión.";
+                        return "Error: Ha caducado la sesión.";
                     }
                 }
             }
@@ -53,7 +41,7 @@ namespace HospitalTierraMedia.Web.Controllers
             {
                 TempData["ErrorMessage"] = "Error: No se pudo obtener el token.";
                 Response.Cookies.Delete("authToken");
-                return "Hubo un error obteniendo el token.";
+                return "Error: No se pudo obtener el token.";
             }
         }
 
@@ -62,6 +50,10 @@ namespace HospitalTierraMedia.Web.Controllers
         public async Task<IActionResult> Index()
         {
             string token = validateToken();
+            if (token.Contains("Error")) 
+            {
+                return RedirectToAction("Index", "Home");
+            }
             var pacientes = await _pacienteService.GetAllPacientes(token);
             var viewModel = new PacientesViewModel
             {
@@ -75,6 +67,10 @@ namespace HospitalTierraMedia.Web.Controllers
         public async Task<IActionResult> Index(string searchDni)
         {
             string token = validateToken();
+            if (token.Contains("Error"))
+            {
+                return RedirectToAction("Index", "Home");
+            }
             var pacientes = await _pacienteService.GetAllPacientes(token);
             var viewModel = new PacientesViewModel();
 
@@ -90,6 +86,10 @@ namespace HospitalTierraMedia.Web.Controllers
         public async Task<IActionResult> Edit(string id)
         {
             string token = validateToken();
+            if (token.Contains("Error"))
+            {
+                return RedirectToAction("Index", "Home");
+            }
             var paciente = await _pacienteService.GetPacienteById(id, token);
             if (paciente == null)
             {
@@ -103,7 +103,8 @@ namespace HospitalTierraMedia.Web.Controllers
                     Nombre = paciente.Nombre,
                     Apellido = paciente.Apellido,
                     Direccion = paciente.Direccion,
-                    DNI = paciente.DNI
+                    DNI = paciente.DNI,
+                    Activo= paciente.Activo
                 };
                 return View("Edit", pacienteViewModel);
             }
@@ -112,9 +113,13 @@ namespace HospitalTierraMedia.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(PacienteViewModel pacienteViewModel)
         {
+            string token = validateToken();
+            if (token.Contains("Error"))
+            {
+                return RedirectToAction("Index", "Home");
+            }
             if (ModelState.IsValid)
             {
-                string token = validateToken();
                 var pacienteEditado = await _pacienteService.GetPacienteById(pacienteViewModel.Id, token);
                 pacienteEditado.Id = pacienteViewModel.Id;
                 pacienteEditado.DNI = pacienteViewModel.DNI;
@@ -138,6 +143,10 @@ namespace HospitalTierraMedia.Web.Controllers
         public IActionResult Create()
         {
             string token = validateToken();
+            if (token.Contains("Error"))
+            {
+                return RedirectToAction("Index", "Home");
+            }
             string id = ObjectId.GenerateNewId().ToString();
             var pacienteViewModel = new PacienteViewModel
             {
@@ -154,9 +163,13 @@ namespace HospitalTierraMedia.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(PacienteViewModel pacienteViewModel)
         {
+            string token = validateToken();
+            if (token.Contains("Error"))
+            {
+                return RedirectToAction("Index", "Home");
+            }
             if (ModelState.IsValid)
             {
-                string token = validateToken();
                 var nuevoPaciente = new Paciente
                 {
                     Id = "",
@@ -182,13 +195,16 @@ namespace HospitalTierraMedia.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Delete(string id)
         {
+            string token = validateToken();
+            if (token.Contains("Error"))
+            {
+                return RedirectToAction("Index", "Home");
+            }
             if (string.IsNullOrEmpty(id))
             {
                 return BadRequest("ID del paciente no proporcionado.");
             }
-            string token = validateToken();
             bool resultado = await _pacienteService.DeletePaciente(id, token);
-
             if (resultado)
             {
                 return RedirectToAction("Index");
